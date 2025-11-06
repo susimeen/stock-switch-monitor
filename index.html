@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <title>即時換股判斷系統</title>
+  <style>
+    body { font-family: Arial, sans-serif; background: #f0f0f0; padding: 20px; }
+    .card { padding: 15px; margin: 10px 0; border-radius: 8px; }
+    .go { background: #e0ffe0; color: #007e33; }
+    .alert { background: #ffe0e0; color: #b00020; }
+    .neutral { background: #fff8e1; color: #ff6f00; }
+  </style>
+</head>
+<body>
+  <h1 id="title">📊 換股判斷系統</h1>
+  <div class="card" id="card6191">載入中...</div>
+  <div class="card" id="card5469">載入中...</div>
+  <div class="card neutral" id="finalAdvice">分析中...</div>
+
+  <script>
+    const TWSE_URL = "https://openapi.twse.com.tw/v1/opendata/t187ap03_L";
+
+    const symbols = {
+      "6191": "精成科",
+      "5469": "瀚宇博"
+    };
+
+    const unicode = {
+      leftParen: "\uFF08", rightParen: "\uFF09", plus: "\u002B",
+      percent: "\u0025", comma: "\u002C", colon: "\uFF1A", period: "\u3002"
+    };
+
+    fetch(TWSE_URL)
+      .then(res => res.json())
+      .then(data => {
+        const s6191 = data.find(d => d.Code === "6191");
+        const s5469 = data.find(d => d.Code === "5469");
+
+        const change6191 = ((s6191.Close - s6191.YesterdayPrice) / s6191.YesterdayPrice) * 100;
+        const change5469 = ((s5469.Close - s5469.YesterdayPrice) / s5469.YesterdayPrice) * 100;
+
+        const html6191 = "<strong>" + symbols["6191"] + unicode.leftParen + "6191" + unicode.rightParen + "</strong><br>" +
+          "最新股價" + unicode.colon + s6191.Close + " 元" + unicode.leftParen + unicode.plus + change6191.toFixed(2) + unicode.percent + unicode.rightParen + "<br>" +
+          "判斷" + unicode.colon + (change6191 > 5 ? "🚨 高檔強勢" + unicode.comma + "可考慮獲利了結" : "✅ 尚未過熱" + unicode.comma + "可續抱");
+
+        const html5469 = "<strong>" + symbols["5469"] + unicode.leftParen + "5469" + unicode.rightParen + "</strong><br>" +
+          "最新股價" + unicode.colon + s5469.Close + " 元" + unicode.leftParen + unicode.plus + change5469.toFixed(2) + unicode.percent + unicode.rightParen + "<br>" +
+          "判斷" + unicode.colon + (change5469 > 2 ? "✅ 技術轉強" + unicode.comma + "可考慮進場" : "🔍 尚未突破" + unicode.comma + "觀察中");
+
+        document.getElementById("card6191").innerHTML = html6191;
+        document.getElementById("card5469").innerHTML = html5469;
+
+        const adviceBox = document.getElementById("finalAdvice");
+        let advice = "📌 建議" + unicode.colon;
+
+        if (change6191 > 5 && change5469 > 2) {
+          advice += "可考慮部分資金轉換至瀚宇博" + unicode.period;
+          adviceBox.className = "card go";
+        } else if (change6191 > 5) {
+          advice += "精成科漲幅大" + unicode.comma + "可設停利點" + unicode.comma + "瀚宇博尚未轉強" + unicode.comma + "暫不換股" + unicode.period;
+          adviceBox.className = "card neutral";
+        } else {
+          advice += "精成科續抱" + unicode.comma + "瀚宇博觀察中" + unicode.comma + "暫不換股" + unicode.period;
+          adviceBox.className = "card neutral";
+        }
+
+        adviceBox.textContent = advice;
+      });
+  </script>
+</body>
+</html>
